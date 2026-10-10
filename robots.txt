@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://2634411.github.io/lenvin-studio/sitemap.xml
