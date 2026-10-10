@@ -1,0 +1,4 @@
+(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();k=e.createElement(t);a=e.getElementsByTagName(t)[0];k.async=1;k.src=r;a.parentNode.insertBefore(k,a)})(window,document,'script','https://mc.yandex.ru/metrika/tag.js?id=113598721','ym');
+ym(113598721,'init',{ssr:true,webvisor:false,clickmap:false,accurateTrackBounce:true,trackLinks:true});
+document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const href=a.getAttribute('href')||'';if(href.startsWith('https://t.me/lenvin7'))ym(113598721,'reachGoal','telegram_click');else if(href.startsWith('mailto:lenvin7@gmail.com'))ym(113598721,'reachGoal','email_click');else if(href.includes('cart.html'))ym(113598721,'reachGoal','request_open');});
+document.addEventListener('submit',e=>{if(e.target.id==='inquiry-form'&&e.target.checkValidity())ym(113598721,'reachGoal','inquiry_draft');});
