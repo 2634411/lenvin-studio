@@ -21,3 +21,27 @@ button,input,textarea{font:inherit}button{min-height:44px}a:focus-visible,button
 @media(max-width:600px){header{flex-wrap:wrap;padding:10px 16px;gap:6px}.site-logo{width:145px;height:48px}nav{width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}nav>a{justify-content:center;font-size:14px;padding:8px;min-height:44px}nav a[href*='cart.html'],nav a[href='#about']{display:inline-flex}nav>a:last-child{grid-column:span 2}section{padding:32px 18px}.hero h1{font-size:38px}.hero .intro{font-size:17px}.hero-art{max-height:220px;object-fit:contain;background:white}.mini-services{margin-top:12px}.floating{padding:14px 18px;font-size:14px}#cards{gap:14px}#cards .cover-link img{height:150px;aspect-ratio:auto;object-fit:contain}#cards .card-body{padding:14px 16px}#cards h3 a{font-size:20px}#cards p{margin-bottom:10px}.service-filters{gap:6px;margin:18px 0}.service-filters button{font-size:14px;min-height:44px;padding:9px 12px}.facts-grid{grid-template-columns:1fr;gap:10px}.facts-grid article{display:flex;align-items:center;gap:20px;padding:16px}.facts-grid strong{min-width:65px;font-size:38px}.facts-grid p{margin:0;font-size:15px}.cases img,.cases img.bot{height:180px;object-fit:contain}.about{gap:22px}.about-art img{max-height:260px;object-fit:contain;transform:none;background:white}.step-grid{grid-template-columns:repeat(2,1fr);gap:10px}.step-grid article{padding:15px}.step-grid h3{font-size:18px}.step-grid p{font-size:14px}.contact{padding:24px;margin:12px 12px 30px}.service-head img{max-height:190px;object-fit:contain}.button{min-height:48px}.email-address{overflow-wrap:anywhere}}
 
 .case-details summary,.about-details summary{min-height:44px;padding:10px 8px;cursor:pointer;font-size:15px;font-weight:650;color:#087f82}.case-details{margin:8px 0}.case-details p{margin-top:12px}@media(max-width:600px){.about img{max-height:240px}.facts-grid{margin-top:16px}.project-facts h2{margin-bottom:16px}.step-grid article{padding:12px}.step-grid b{font-size:26px}.step-grid h3{margin:8px 0}.steps h2{margin-bottom:16px}}
+
+/* Compact navigation, touch targets and balanced contact layout. */
+@media(max-width:600px){
+ header{flex-wrap:nowrap;height:72px;min-height:72px;padding:10px 12px;gap:8px}
+ header .brand{flex:0 1 110px;min-width:0;display:flex;align-items:center;height:44px}
+ header .site-logo{width:100%;height:44px}
+ header nav{display:flex;flex-wrap:nowrap;width:auto;gap:6px;flex:0 0 auto}
+ header nav>a{display:none!important}
+ header nav>a[href*="cart.html"],header nav>a[href="https://t.me/lenvin7"]{display:inline-flex!important;grid-column:auto;white-space:nowrap;font-size:14px;min-width:44px;min-height:44px;padding:8px}
+}
+@media(max-width:800px){
+ a{min-height:44px;display:inline-flex;align-items:center}
+ #cards h3 a{min-height:44px;display:flex;align-items:center}
+ #cards .cover-link,.cases article>a:first-child{display:block;min-height:44px}
+ header .brand{min-height:44px}
+ button{min-width:44px;min-height:44px}
+ .cases article>a:not(:first-child){min-height:44px;display:inline-flex;align-items:center}
+}
+@media(min-width:900px){
+ #contact{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,520px);gap:40px;align-items:start}
+ #contact .contact-info{min-width:0}
+ #contact .inquiry-form{width:100%;max-width:520px;margin-top:0;padding-top:0;border-top:0;min-width:0}
+ #contact .inquiry-form h3{margin-top:0}
+}
