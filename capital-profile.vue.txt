@@ -1,0 +1,108 @@
+<script setup>
+import { computed, ref } from 'vue';
+import { useForm } from '@inertiajs/vue3';
+const props = defineProps({ profile: Object, savedAt: String, saved: Boolean, preview: Boolean });
+const form = useForm(JSON.parse(JSON.stringify(props.profile)));
+const menuOpen = ref(false);
+const explanation = ref(false);
+const goalOptions = [
+ {id:1,title:'Создать пассивный доход',caption:'Доход без постоянного участия'},
+ {id:2,title:'Сформировать резервный фонд',caption:'Запас на непредвиденные расходы'},
+ {id:3,title:'Закрыть кредиты и долги',caption:'Освободить ежемесячный бюджет'},
+ {id:4,title:'Купить квартиру',caption:'Собственное пространство'},
+ {id:5,title:'Купить дом или дачу',caption:'Место для жизни и отдыха'},
+ {id:6,title:'Купить автомобиль',caption:'Большая покупка по плану'},
+];
+const checks = computed(() => [
+ {label:'О себе',done:!!(form.name && form.email && form.city && form.birth_date)},
+ {label:'Семья и работа',done:!!(form.family && form.employment && form.profession && form.risk && form.horizon && form.children !== '')},
+ {label:'Финансовые цели',done:form.goals.length>0 && form.goals.every(g=>Number(g.amount)>0)},
+ {label:'Моя ситуация',done:!!form.situation?.trim()},
+ {label:'Моя стратегия',done:!!form.strategy?.trim()},
+ {label:'Активный возраст',done:!!form.birth_date && Number(form.active_until)>=0 && Number(form.active_until)<=100},
+]);
+const completed = computed(() => checks.value.filter(b=>b.done).length);
+const progress = computed(() => Math.round(completed.value/6*100));
+const age = computed(() => {
+ if (!form.birth_date) return null;
+ const birthday=new Date(form.birth_date+'T00:00:00'), now=new Date();
+ if (Number.isNaN(birthday.getTime()) || birthday>now) return null;
+ let a=now.getFullYear()-birthday.getFullYear();
+ if(now.getMonth()<birthday.getMonth() || (now.getMonth()===birthday.getMonth() && now.getDate()<birthday.getDate())) a--;
+ return a;
+});
+const yearsLeft = computed(() => age.value === null ? null : Math.max(0,Number(form.active_until)-age.value));
+const total = computed(() => form.goals.reduce((s,g)=>s+(Number(g.amount)||0),0));
+const money = v => new Intl.NumberFormat('ru-RU').format(v);
+const selected = id => form.goals.find(g=>g.id===id);
+function toggle(id) { const i=form.goals.findIndex(g=>g.id===id); if(i<0) form.goals.push({id,amount:null}); else form.goals.splice(i,1); }
+function save() {
+ if (!props.preview) { form.post('/profile',{preserveScroll:true}); return; }
+ form.clearErrors();
+ if(form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) form.setError('email','Проверьте адрес электронной почты.');
+ if(form.goals.some(g=>!Number.isInteger(Number(g.amount)) || Number(g.amount)<=0)) form.setError('goals','Укажите положительную сумму для каждой выбранной цели.');
+ if(Object.keys(form.errors).length) return;
+ localStorage.setItem('capital-profile-preview-v1',JSON.stringify(form.data())); form.defaults();
+}
+function jump(id) { menuOpen.value=false; document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'}); }
+</script>
+
+<template>
+<div class="workspace">
+ <aside :class="['sidebar',{open:menuOpen}]">
+  <a class="brand" href="/" aria-label="Личный капитал — профиль"><span>ЛИЧНЫЙ</span><strong>КАПИТАЛ<span class="brand-square"></span></strong></a>
+  <div class="sidebar-section">Личный кабинет</div>
+  <button class="nav-item active" @click="jump('profile')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-3a7 7 0 0 1 14 0v3"/></svg>Мой профиль<span class="nav-dot"></span></button>
+  <button class="nav-item" @click="jump('goals')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".5"/></svg>Мои цели</button>
+  <button class="nav-item" @click="jump('strategy')"><svg viewBox="0 0 24 24"><path d="M4 20V4m0 16h16M7 15l4-5 4 3 5-8"/></svg>Моя стратегия</button>
+  <div class="sidebar-section future-label">Следующие этапы</div>
+  <div v-for="label in ['Дашборд','Доходы и расходы','Активы и пассивы','Диагностика','План действий','Админка']" :key="label" class="nav-item muted"><span class="future-icon">◇</span>{{ label }}<svg class="lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
+  <div class="sidebar-bottom"><div class="mini-avatar">АИ</div><div><b>Учебный профиль</b><span>Демонстрационные данные</span></div></div>
+ </aside>
+ <div v-if="menuOpen" class="scrim" @click="menuOpen=false"></div>
+ <main>
+  <header class="topbar"><button class="hamburger" aria-label="Открыть меню" @click="menuOpen=!menuOpen"><span></span><span></span><span></span></button><span>Личный кабинет <span class="crumb-sep">/</span> <b>Мой профиль</b></span><button class="demo-pill" @click="explanation=!explanation"><span></span>Демонстрация</button></header>
+  <div class="content">
+   <div v-if="preview" class="explanation static-notice"><strong>Интерактивный просмотр профиля</strong><p>GitHub Pages: изменения сохраняются только в этом браузере. Серверная версия Laravel + Vue доступна в <a href="capital-profile-source.zip">архиве исходников</a>. <a href="capital-profile-readme.md">Как запустить и что проверено</a>.</p></div>
+   <div v-if="explanation" class="explanation"><strong>Проверяемый фрагмент первого спринта</strong><p>Vue + Inertia + Laravel. В серверной версии профиль сохраняется в SQLite; на GitHub Pages работает только браузерный просмотр. Без регистрации, писем, финансовых расчетов и админки. Внешний вид восстановлен по видео; исходный HTML заказчика еще не получен. Здесь только учебные данные.</p></div>
+   <div class="intro" id="profile"><div><div class="eyebrow">ВАША ТОЧКА ОТСЧЕТА</div><h1>Мой профиль<span>.</span></h1><p>Сначала - о вас. Затем - о ваших целях.</p></div><div class="intro-note"><svg viewBox="0 0 24 24"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6Z"/><path d="m8 12 3 3 5-6"/></svg><span>Данные этого примера<br>{{ preview ? "сохраняются в браузере" : "сохраняются на сервере" }}</span></div></div>
+   <section class="profile-summary">
+    <div class="avatar">{{ (form.name || 'А').split(' ').map(x=>x[0]).slice(0,2).join('') }}</div>
+    <div class="summary-info"><div class="summary-title"><h2>{{form.name || 'Ваш профиль'}}</h2><span>Учебные данные</span></div><div class="progress-label"><span>Профиль заполнен</span><strong>{{progress}}%</strong></div><div class="progress-track"><div :style="{width:progress+'%'}"></div></div><p>Заполнено {{completed}} из 6 блоков</p></div>
+    <div class="completion-ring" :style="{'--progress':progress+'%'}"><span>{{completed}}<small>/ 6</small></span></div>
+   </section>
+   <form @submit.prevent="save" novalidate>
+    <div v-if="Object.keys(form.errors).length" class="error-summary" role="alert">Данные не сохранены. Проверьте отмеченные поля.<ul><li v-for="(error,key) in form.errors" :key="key">{{error}}</li></ul></div>
+    <div class="two-columns">
+     <section class="panel"><div class="panel-heading"><div><span class="section-kicker">КОНТАКТЫ</span><h2>О себе</h2></div><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-3a7 7 0 0 1 14 0v3"/></svg></div>
+      <label>Имя и фамилия<input v-model="form.name" autocomplete="off" placeholder="Как к вам обращаться"></label>
+      <div class="field-pair"><label>Email<input v-model="form.email" type="email" :aria-invalid="!!form.errors.email" placeholder="name@example.com"><small v-if="form.errors.email" class="field-error">{{form.errors.email}}</small></label><label>Телефон<input v-model="form.phone" type="tel" :aria-invalid="!!form.errors.phone" placeholder="+7 900 000-00-00"></label></div>
+      <fieldset class="messengers"><legend>Предпочитаемые мессенджеры <small>Можно несколько</small></legend><label v-for="m in ['MAX','Telegram','WhatsApp']" :key="m" :class="['chip',{checked:form.messengers.includes(m)}]"><input type="checkbox" :value="m" v-model="form.messengers"><span class="checkmark">✓</span>{{m}}</label></fieldset>
+      <div class="field-pair"><label>Город<input v-model="form.city" placeholder="Город проживания"></label><label>Дата рождения<input v-model="form.birth_date" type="date" :aria-invalid="!!form.errors.birth_date"></label></div>
+     </section>
+     <section class="panel"><div class="panel-heading"><div><span class="section-kicker">ВАША СИТУАЦИЯ</span><h2>Семья и работа</h2></div><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="14" rx="3"/><path d="M8 7V3h8v4M3 13h18M10 13v3h4v-3"/></svg></div>
+      <div class="field-pair"><label>Семейное положение<select v-model="form.family"><option value="">Выберите</option><option v-for="x in ['Не в браке','В браке','В разводе','Вдовец / вдова']">{{x}}</option></select></label><label>Количество детей<input v-model="form.children" type="number" min="0" max="20" placeholder="0"></label></div>
+      <label>Занятость<select v-model="form.employment"><option value="">Выберите</option><option v-for="x in ['Наемный сотрудник','Руководитель','Владелец бизнеса / ИП','Самозанятость / фриланс','Пенсионер','Студент','Сейчас не работаю']">{{x}}</option></select></label>
+      <label>Профессия / бизнес<input v-model="form.profession" placeholder="Например: инженер, свое дело"></label>
+      <div class="field-pair"><label>Отношение к риску<select v-model="form.risk"><option value="">Выберите</option><option v-for="x in ['Консервативное','Умеренное','Рисковое']">{{x}}</option></select></label><label>Горизонт планирования<select v-model="form.horizon"><option value="">Выберите</option><option v-for="x in ['До 1 года','1–3 года','3–10 лет','Более 10 лет']">{{x}}</option></select></label></div>
+     </section>
+    </div>
+    <section class="panel goals-panel" id="goals"><div class="panel-heading"><div><span class="section-kicker">ЧТО ДЛЯ ВАС ВАЖНО</span><h2>Мои финансовые цели</h2><p>Выберите несколько целей и укажите сумму для каждой.</p></div><span class="small-tag">Фрагмент списка</span></div>
+     <div class="goal-top"><label>Срок цели<select v-model="form.goal_period"><option v-for="x in ['1 месяц','2 месяца','3 месяца','6 месяцев','9 месяцев','1 год']">{{x}}</option></select></label><label>Главная краткосрочная цель<input v-model="form.main_goal"></label></div>
+     <div class="goals-grid"><div v-for="goal in goalOptions" :key="goal.id" :class="['goal-card',{selected:!!selected(goal.id)}]"><label class="goal-choice"><input type="checkbox" :checked="!!selected(goal.id)" @change="toggle(goal.id)"><span class="goal-check">✓</span><span><strong>{{goal.title}}</strong><small>{{goal.caption}}</small></span></label><label v-if="selected(goal.id)" class="goal-amount">Нужно, руб.<input type="number" min="1" step="1" v-model="selected(goal.id).amount" :aria-label="'Сумма: '+goal.title" placeholder="Введите сумму"></label></div></div>
+     <div class="goal-total"><span>Выбрано целей: <b>{{form.goals.length}}</b></span><span>Общая сумма <strong>{{money(total)}} <small>₽</small></strong></span></div>
+    </section>
+    <div class="two-columns" id="strategy"><section class="panel text-panel"><span class="section-kicker">СЕГОДНЯ</span><h2>Моя ситуация</h2><p>Опишите, с чего вы начинаете: семья, работа, обязательства и накопления.</p><label class="sr-only" for="situation">Моя ситуация</label><textarea id="situation" v-model="form.situation" maxlength="5000" placeholder="Например: живу в Казани, работаю инженером. Хочу создать финансовую подушку и постепенно закрыть кредит."></textarea><span class="counter">{{(form.situation || '').length}} / 5000</span></section>
+     <section class="panel text-panel"><span class="section-kicker">ЗАВТРА</span><h2>Моя инвестиционная стратегия</h2><p>Что хотите изменить: цель, срок, доступная сумма и приемлемый риск.</p><label class="sr-only" for="strategy-text">Моя инвестиционная стратегия</label><textarea id="strategy-text" v-model="form.strategy" maxlength="5000" placeholder="Расскажите своими словами, к чему вы хотите прийти."></textarea><span class="counter">{{(form.strategy || '').length}} / 5000</span></section></div>
+    <section class="panel age-panel"><div class="panel-heading"><div><span class="section-kicker">ВРЕМЯ КАК РЕСУРС</span><h2>Шкала активного дохода</h2><p>До какого возраста вы планируете активно зарабатывать?</p></div><label class="age-value"><input type="number" min="0" max="100" v-model.number="form.active_until" aria-label="Возраст окончания активного дохода"><span>лет</span></label></div>
+     <input class="age-range" type="range" min="0" max="100" v-model.number="form.active_until" aria-label="Шкала возраста">
+     <div class="life-grid" aria-hidden="true"><span v-for="n in 100" :class="{past:age!==null && n<=age, future:age!==null && n>age && n<=Number(form.active_until)}"></span></div><div class="life-labels"><span v-for="n in [0,20,40,60,80,100]">{{n}}</span></div>
+     <div v-if="age!==null" class="age-result"><strong>{{yearsLeft}} <small>лет</small></strong><p v-if="yearsLeft>0">Период активного дохода: с {{age}} до {{form.active_until}} лет.<span>Финансовый расчет появится после подключения следующих модулей.</span></p><p v-else>Плановый возраст уже достигнут.<span>Можно выбрать другой возраст окончания активной работы.</span></p></div><p v-else class="empty-note">Добавьте дату рождения в блоке «О себе», чтобы увидеть шкалу.</p>
+    </section>
+    <div class="save-bar"><div class="save-state" aria-live="polite"><span :class="{unsaved:form.isDirty}"></span><div><strong>{{form.processing ? 'Сохраняем…' : form.isDirty ? 'Есть несохраненные изменения' : (preview ? 'Профиль сохранен в браузере' : 'Профиль сохранен на сервере')}}</strong><small>{{form.isDirty ? 'Нажмите «Сохранить профиль»' : 'Можно обновить страницу и проверить результат'}}</small></div></div><button class="primary" type="submit" :disabled="form.processing">{{form.processing?'Сохраняем…':'Сохранить профиль'}}</button></div>
+   </form>
+   <footer class="demo-footer"><strong>Демонстрационный фрагмент · Laravel + Vue</strong><p>Отдельный пример по видео. Не клиентская платформа и не полный первый спринт. Не вводите реальные персональные или финансовые данные.</p></footer>
+  </div>
+ </main>
+</div>
+</template>

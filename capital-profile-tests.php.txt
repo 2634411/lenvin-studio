@@ -1,0 +1,64 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\DemoProfile;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
+use Tests\TestCase;
+
+/** Проверяет серверное сохранение, отклонение неверного ввода и изоляцию демо-сессий. */
+class DemoProfileTest extends TestCase
+{
+    use RefreshDatabase;
+
+    /** Сохраненные поля доступны после повторного открытия страницы. */
+    public function test_profile_and_goal_persist_after_reload(): void
+    {
+        $this->withSession(['demo_key' => 'visitor-a'])->get('/')->assertOk();
+        $data = DemoProfile::where('session_key', 'visitor-a')->firstOrFail()->data;
+        $data['city'] = 'Томск';
+        $data['goals'] = [['id' => 2, 'amount' => 300000]];
+        $this->post('/profile', $data)->assertRedirect('/');
+        $this->get('/')->assertInertia(fn (Assert $page) => $page->component('Profile')->where('profile.city', 'Томск')->where('profile.goals.0.amount', 300000));
+    }
+
+    /** Неверные данные не заменяют уже сохраненный профиль. */
+    public function test_invalid_email_negative_goal_and_future_birth_date_are_rejected(): void
+    {
+        $this->withSession(['demo_key' => 'visitor-a'])->get('/');
+        $data = DemoProfile::where('session_key', 'visitor-a')->firstOrFail()->data;
+        $data['email'] = 'not-an-email';
+        $data['birth_date'] = '2099-01-01';
+        $data['goals'] = [['id' => 1, 'amount' => -100]];
+        $this->postJson('/profile', $data)->assertUnprocessable()->assertJsonValidationErrors(['email', 'birth_date', 'goals.0.amount']);
+        $this->assertSame('demo@example.com', DemoProfile::where('session_key', 'visitor-a')->firstOrFail()->data['email']);
+    }
+
+    /** Чужой идентификатор в форме не дает отредактировать чужой профиль. */
+    public function test_profile_belongs_to_server_session_not_submitted_id(): void
+    {
+        $this->withSession(['demo_key' => 'visitor-a'])->get('/');
+        $first = DemoProfile::where('session_key', 'visitor-a')->firstOrFail();
+        $this->withSession(['demo_key' => 'visitor-b'])->get('/');
+        $data = DemoProfile::where('session_key', 'visitor-b')->firstOrFail()->data;
+        $data['city'] = 'Пермь';
+        $data['session_key'] = 'visitor-a';
+        $data['id'] = $first->id;
+        $this->post('/profile', $data)->assertRedirect('/');
+        $this->assertSame('Казань', $first->fresh()->data['city']);
+        $this->assertSame('Пермь', DemoProfile::where('session_key', 'visitor-b')->firstOrFail()->data['city']);
+        $this->assertDatabaseCount('demo_profiles', 2);
+    }
+
+    /** Неизвестные и повторяющиеся цели не проходят серверную проверку. */
+    public function test_unknown_goal_and_duplicate_goal_are_rejected(): void
+    {
+        $this->withSession(['demo_key' => 'visitor-a'])->get('/');
+        $data = DemoProfile::where('session_key', 'visitor-a')->firstOrFail()->data;
+        $data['goals'] = [['id' => 50, 'amount' => 100]];
+        $this->postJson('/profile', $data)->assertUnprocessable()->assertJsonValidationErrors('goals.0.id');
+        $data['goals'] = [['id' => 1, 'amount' => 100], ['id' => 1, 'amount' => 200]];
+        $this->postJson('/profile', $data)->assertUnprocessable()->assertJsonValidationErrors('goals.0.id');
+    }
+}

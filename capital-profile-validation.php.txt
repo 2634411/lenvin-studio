@@ -1,0 +1,60 @@
+<?php
+
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+/** Серверные ограничения учебной анкеты, независимые от браузера. */
+class SaveDemoProfileRequest extends FormRequest
+{
+    /** Демо локальное, сохраняет только профиль собственной сессии. */
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /** Возвращает разрешенные поля и значения анкеты. */
+    public function rules(): array
+    {
+        return [
+            'name' => ['nullable', 'string', 'max:120'],
+            'email' => ['nullable', 'email:rfc', 'max:150'],
+            'phone' => ['nullable', 'string', 'regex:/^\+?[0-9 ()-]{10,22}$/'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'birth_date' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today', 'after:1926-01-01'],
+            'messengers' => ['present', 'array', 'max:3'],
+            'messengers.*' => ['distinct', Rule::in(['MAX', 'Telegram', 'WhatsApp'])],
+            'family' => ['nullable', Rule::in(['Не в браке', 'В браке', 'В разводе', 'Вдовец / вдова'])],
+            'children' => ['nullable', 'integer', 'between:0,20'],
+            'employment' => ['nullable', Rule::in(['Наемный сотрудник', 'Руководитель', 'Владелец бизнеса / ИП', 'Самозанятость / фриланс', 'Пенсионер', 'Студент', 'Сейчас не работаю'])],
+            'profession' => ['nullable', 'string', 'max:150'],
+            'risk' => ['nullable', Rule::in(['Консервативное', 'Умеренное', 'Рисковое'])],
+            'horizon' => ['nullable', Rule::in(['До 1 года', '1–3 года', '3–10 лет', 'Более 10 лет'])],
+            'goal_period' => ['required', Rule::in(['1 месяц', '2 месяца', '3 месяца', '6 месяцев', '9 месяцев', '1 год'])],
+            'main_goal' => ['nullable', 'string', 'max:150'],
+            'goals' => ['present', 'array', 'max:6'],
+            'goals.*' => ['array:id,amount'],
+            'goals.*.id' => ['required', 'integer', 'distinct', 'between:1,6'],
+            'goals.*.amount' => ['required', 'integer', 'between:1,100000000000'],
+            'situation' => ['nullable', 'string', 'max:5000'],
+            'strategy' => ['nullable', 'string', 'max:5000'],
+            'active_until' => ['required', 'integer', 'between:0,100'],
+        ];
+    }
+
+    /** Показывает понятные сообщения вместо технических кодов. */
+    public function messages(): array
+    {
+        return [
+            'email.email' => 'Проверьте адрес электронной почты.',
+            'phone.regex' => 'Введите телефон: от 10 цифр, можно с +, пробелами и скобками.',
+            'birth_date.before_or_equal' => 'Дата рождения не может быть в будущем.',
+            'birth_date.after' => 'Проверьте год рождения.',
+            'goals.*.amount.required' => 'Укажите сумму для выбранной цели.',
+            'goals.*.amount.integer' => 'Укажите сумму целым числом рублей.',
+            'goals.*.amount.between' => 'Сумма должна быть от 1 до 100 млрд рублей.',
+            'active_until.between' => 'Возраст должен быть от 0 до 100 лет.',
+        ];
+    }
+}

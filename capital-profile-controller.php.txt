@@ -1,0 +1,55 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\SaveDemoProfileRequest;
+use App\Models\DemoProfile;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Inertia\Inertia;
+use Inertia\Response;
+
+/** Проверяемый фрагмент профиля без имитации авторизации и финансовых расчетов. */
+class DemoProfileController extends Controller
+{
+    /** Показывает учебный профиль только текущей серверной сессии. */
+    public function show(Request $request): Response
+    {
+        $profile = $this->profileFor($request);
+
+        return Inertia::render('Profile', [
+            'profile' => $profile->data,
+            'savedAt' => $profile->updated_at->toIso8601String(),
+            'saved' => $request->session()->get('saved', false),
+        ]);
+    }
+
+    /** Сохраняет лишь проверенные поля профиля текущей сессии. */
+    public function save(SaveDemoProfileRequest $request): RedirectResponse
+    {
+        $this->profileFor($request)->update(['data' => $request->validated()]);
+
+        return to_route('demo.profile')->with('saved', true);
+    }
+
+    /** Ключ берется из серверной сессии, а не из подменяемого поля формы. */
+    private function profileFor(Request $request): DemoProfile
+    {
+        if (! $request->session()->has('demo_key')) {
+            $request->session()->put('demo_key', (string) Str::uuid());
+        }
+
+        return DemoProfile::firstOrCreate(
+            ['session_key' => $request->session()->get('demo_key')],
+            ['data' => [
+                'name' => 'Анна Иванова', 'email' => 'demo@example.com', 'phone' => '',
+                'city' => 'Казань', 'birth_date' => '1990-05-20', 'messengers' => ['MAX'],
+                'family' => '', 'children' => '', 'employment' => '', 'profession' => '',
+                'risk' => '', 'horizon' => '', 'goal_period' => '1 год',
+                'main_goal' => 'Создать пассивный доход', 'goals' => [],
+                'situation' => '', 'strategy' => '', 'active_until' => 60,
+            ]],
+        );
+    }
+}
