@@ -57,18 +57,17 @@ function jump(id) { menuOpen.value=false; document.getElementById(id)?.scrollInt
   <button class="nav-item" @click="jump('strategy')"><svg viewBox="0 0 24 24"><path d="M4 20V4m0 16h16M7 15l4-5 4 3 5-8"/></svg>Моя стратегия</button>
   <div class="sidebar-section future-label">Следующие этапы</div>
   <div v-for="label in ['Дашборд','Доходы и расходы','Активы и пассивы','Диагностика','План действий','Админка']" :key="label" class="nav-item muted"><span class="future-icon">◇</span>{{ label }}<svg class="lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
-  <div class="sidebar-bottom"><div class="mini-avatar">АИ</div><div><b>Учебный профиль</b><span>Демонстрационные данные</span></div></div>
+  <div class="sidebar-bottom"><div class="mini-avatar">АИ</div><div><b>Анна Иванова</b><span>Личный кабинет</span></div></div>
  </aside>
  <div v-if="menuOpen" class="scrim" @click="menuOpen=false"></div>
  <main>
-  <header class="topbar"><button class="hamburger" aria-label="Открыть меню" @click="menuOpen=!menuOpen"><span></span><span></span><span></span></button><span>Личный кабинет <span class="crumb-sep">/</span> <b>Мой профиль</b></span><button class="demo-pill" @click="explanation=!explanation"><span></span>Демонстрация</button></header>
+  <header class="topbar"><button class="hamburger" aria-label="Открыть меню" @click="menuOpen=!menuOpen"><span></span><span></span><span></span></button><span>Личный кабинет <span class="crumb-sep">/</span> <b>Мой профиль</b></span><span class="account-pill">Личный кабинет</span></header>
   <div class="content">
-   <div v-if="preview" class="explanation static-notice"><strong>Интерактивный просмотр профиля</strong><p>GitHub Pages: изменения сохраняются только в этом браузере. Серверная версия Laravel + Vue доступна в <a href="capital-profile-source.zip">архиве исходников</a>. <a href="capital-profile-readme.md">Как запустить и что проверено</a>.</p></div>
-   <div v-if="explanation" class="explanation"><strong>Проверяемый фрагмент первого спринта</strong><p>Vue + Inertia + Laravel. В серверной версии профиль сохраняется в SQLite; на GitHub Pages работает только браузерный просмотр. Без регистрации, писем, финансовых расчетов и админки. Внешний вид восстановлен по видео; исходный HTML заказчика еще не получен. Здесь только учебные данные.</p></div>
-   <div class="intro" id="profile"><div><div class="eyebrow">ВАША ТОЧКА ОТСЧЕТА</div><h1>Мой профиль<span>.</span></h1><p>Сначала - о вас. Затем - о ваших целях.</p></div><div class="intro-note"><svg viewBox="0 0 24 24"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6Z"/><path d="m8 12 3 3 5-6"/></svg><span>Данные этого примера<br>{{ preview ? "сохраняются в браузере" : "сохраняются на сервере" }}</span></div></div>
+   <div v-if="preview" class="preview-notice">Предпросмотр · Изменения сохраняются на этом устройстве</div>
+   <div class="intro" id="profile"><div><div class="eyebrow">ВАША ТОЧКА ОТСЧЕТА</div><h1>Мой профиль<span>.</span></h1><p>Сначала - о вас. Затем - о ваших целях.</p></div></div>
    <section class="profile-summary">
     <div class="avatar">{{ (form.name || 'А').split(' ').map(x=>x[0]).slice(0,2).join('') }}</div>
-    <div class="summary-info"><div class="summary-title"><h2>{{form.name || 'Ваш профиль'}}</h2><span>Учебные данные</span></div><div class="progress-label"><span>Профиль заполнен</span><strong>{{progress}}%</strong></div><div class="progress-track"><div :style="{width:progress+'%'}"></div></div><p>Заполнено {{completed}} из 6 блоков</p></div>
+    <div class="summary-info"><div class="summary-title"><h2>{{form.name || 'Ваш профиль'}}</h2></div><div class="progress-label"><span>Профиль заполнен</span><strong>{{progress}}%</strong></div><div class="progress-track"><div :style="{width:progress+'%'}"></div></div><p>Заполнено {{completed}} из 6 блоков</p></div>
     <div class="completion-ring" :style="{'--progress':progress+'%'}"><span>{{completed}}<small>/ 6</small></span></div>
    </section>
    <form @submit.prevent="save" novalidate>
@@ -97,11 +96,11 @@ function jump(id) { menuOpen.value=false; document.getElementById(id)?.scrollInt
     <section class="panel age-panel"><div class="panel-heading"><div><span class="section-kicker">ВРЕМЯ КАК РЕСУРС</span><h2>Шкала активного дохода</h2><p>До какого возраста вы планируете активно зарабатывать?</p></div><label class="age-value"><input type="number" min="0" max="100" v-model.number="form.active_until" aria-label="Возраст окончания активного дохода"><span>лет</span></label></div>
      <input class="age-range" type="range" min="0" max="100" v-model.number="form.active_until" aria-label="Шкала возраста">
      <div class="life-grid" aria-hidden="true"><span v-for="n in 100" :class="{past:age!==null && n<=age, future:age!==null && n>age && n<=Number(form.active_until)}"></span></div><div class="life-labels"><span v-for="n in [0,20,40,60,80,100]">{{n}}</span></div>
-     <div v-if="age!==null" class="age-result"><strong>{{yearsLeft}} <small>лет</small></strong><p v-if="yearsLeft>0">Период активного дохода: с {{age}} до {{form.active_until}} лет.<span>Финансовый расчет появится после подключения следующих модулей.</span></p><p v-else>Плановый возраст уже достигнут.<span>Можно выбрать другой возраст окончания активной работы.</span></p></div><p v-else class="empty-note">Добавьте дату рождения в блоке «О себе», чтобы увидеть шкалу.</p>
+     <div v-if="age!==null" class="age-result"><strong>{{yearsLeft}} <small>лет</small></strong><p v-if="yearsLeft>0">Период активного дохода: с {{age}} до {{form.active_until}} лет.<span>Шкала помогает увидеть ваш горизонт планирования.</span></p><p v-else>Плановый возраст уже достигнут.<span>Можно выбрать другой возраст окончания активной работы.</span></p></div><p v-else class="empty-note">Добавьте дату рождения в блоке «О себе», чтобы увидеть шкалу.</p>
     </section>
-    <div class="save-bar"><div class="save-state" aria-live="polite"><span :class="{unsaved:form.isDirty}"></span><div><strong>{{form.processing ? 'Сохраняем…' : form.isDirty ? 'Есть несохраненные изменения' : (preview ? 'Профиль сохранен в браузере' : 'Профиль сохранен на сервере')}}</strong><small>{{form.isDirty ? 'Нажмите «Сохранить профиль»' : 'Можно обновить страницу и проверить результат'}}</small></div></div><button class="primary" type="submit" :disabled="form.processing">{{form.processing?'Сохраняем…':'Сохранить профиль'}}</button></div>
+    <div class="save-bar"><div class="save-state" aria-live="polite"><span :class="{unsaved:form.isDirty}"></span><div><strong>{{form.processing ? 'Сохраняем…' : form.isDirty ? 'Есть несохраненные изменения' : (preview ? 'Сохранено на этом устройстве' : 'Изменения сохранены')}}</strong><small>{{form.isDirty ? 'Нажмите «Сохранить профиль»' : 'Все изменения сохранены'}}</small></div></div><button class="primary" type="submit" :disabled="form.processing">{{form.processing?'Сохраняем…':'Сохранить профиль'}}</button></div>
    </form>
-   <footer class="demo-footer"><strong>Демонстрационный фрагмент · Laravel + Vue</strong><p>Отдельный пример по видео. Не клиентская платформа и не полный первый спринт. Не вводите реальные персональные или финансовые данные.</p></footer>
+
   </div>
  </main>
 </div>
