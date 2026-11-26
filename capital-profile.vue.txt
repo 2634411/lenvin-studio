@@ -50,7 +50,7 @@ function jump(id) { menuOpen.value=false; document.getElementById(id)?.scrollInt
 <template>
 <div class="workspace">
  <aside :class="['sidebar',{open:menuOpen}]">
-  <a class="brand" href="/" aria-label="Личный капитал — профиль"><span>ЛИЧНЫЙ</span><strong>КАПИТАЛ<span class="brand-square"></span></strong></a>
+  <a class="brand" :href="preview ? './capital-profile.html' : '/'" aria-label="Личный капитал — профиль"><span>ЛИЧНЫЙ</span><strong>КАПИТАЛ<span class="brand-square"></span></strong></a>
   <div class="sidebar-section">Личный кабинет</div>
   <button class="nav-item active" @click="jump('profile')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-3a7 7 0 0 1 14 0v3"/></svg>Мой профиль<span class="nav-dot"></span></button>
   <button class="nav-item" @click="jump('goals')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".5"/></svg>Мои цели</button>
